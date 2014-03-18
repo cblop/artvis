@@ -64,7 +64,7 @@ function nodeClick(d) {
   update(d.group);
 }
 
-d3.json("https://dl.dropboxusercontent.com/u/58061629/graph_subjects.json", function(json) {
+d3.json("./graph_subjects.json", function(json) {
   root = json;
   update([]);
 });
