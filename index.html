@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<head>
+<title>Art Graph</title>
+<meta charset="utf-8">
+<style>
+
+.node {
+  stroke: #fff;
+  stroke-width: 1.5px;
+}
+
+.link {
+  stroke: #999;
+  stroke-opacity: .6;
+}
+
+.active {
+  fill: #555;
+}
+
+.inactive {
+  fill: #eee;
+}
+
+.inactive:hover {
+  fill: #aaa;
+}
+
+body {
+  font-family: "helvetica", "arial", styleans-serif;
+  font-size: 0.9em;
+}
+
+text {
+  font: 10px sans-serif;
+  pointer-events: none;
+}
+
+
+</style>
+</head>
+<body>
+<script src="http://d3js.org/d3.v3.js"></script>
+<script>
+
+var width = 1200,
+    height = 800,
+    root;
+
+var color = d3.scale.category20();
+
+var force = d3.layout.force()
+    .charge(-800)
+    .gravity(1)
+    .linkDistance(30)
+    .size([width, height]);
+
+var svg = d3.select("body").append("svg")
+    .attr("width", width)
+    .attr("height", height);
+
+function nodeClick(d) {
+  console.log(d.group);
+  update(d.group);
+}
+
+d3.json("./graph_subjects.json", function(json) {
+  root = json;
+  update([]);
+});
+
+function contains(x, ys) {
+  for (var i = ys.length - 1; i >= 0; i--) {
+    if (ys[i] === x) return true;
+  };
+  return false;
+}
+
+function filterDemNodes(nodes, filter) {
+ var filtered = nodes.filter(function (node) {return node.group === filter});
+ return filtered;
+}
+
+/*
+function filterDemLinks(links, filter) {
+ var filtered = links.filter(function (link) {return contains(filter, link.subjects)});
+ return filtered;
+}
+*/
+
+function filterFromList(links, filterlist) {
+ var filtered = links.filter(function (link) {
+ var isin = false;
+  for (var i = filterlist.length - 1; i >= 0; i--) {
+    if (contains(filterlist[i], link.subjects)) {
+      isin = true;
+    }
+  };
+  return isin;
+ }) 
+ return filtered;
+}
+
+function getNodesFromLinks(links, nodes) {
+ var sources =  links.map(function (x) {return x.source});
+ var targets =  links.map(function (x) {return x.target});
+ var allnodes = sources.concat(targets);
+ var uniqueArray = allnodes.filter(function(elem, pos) {
+    return allnodes.indexOf(elem) == pos;
+});
+ return uniqueArray;
+}
+
+function update(filter) {
+  var graph = root;
+  console.log(filter);
+
+  var filterNodes = graph.nodes;
+  var filterLinks = graph.links;
+  if (filter.length > 0) { 
+    //filterNodes = filterDemNodes(graph.nodes, filter);
+    filterLinks = filterFromList(graph.links, filter);
+    filterNodes = getNodesFromLinks(filterLinks, graph.nodes);
+    console.log("Subject: " + filter);
+    console.log("First: " + filterNodes[0].name);
+    console.log("Links: " + filterLinks.length);
+    console.log("Nodes: " + filterNodes.length);
+  };
+
+  force
+      .nodes(filterNodes)
+      .links(filterLinks)
+      .start();
+
+  var link = svg.selectAll(".link").data(filterLinks);
+  link.exit().remove();
+  link.enter().append("line");
+  link.attr("class", "link");
+  link.style("stroke-width", function(d) { return Math.sqrt(d.value); });
+
+
+  var node = svg.selectAll(".node").data(filterNodes);
+  node.exit().remove();
+  node.enter().append("circle");
+  node.attr("class", "node");
+  node.attr("r", 5);
+  //node.on("click", nodeClick);
+  node.style("fill", function(d) { return color(d.group); });
+  node.selectAll("title").remove();
+  node.append("title")
+      .text(function(d) { return d.name + "\n" + d.group; });
+  //node.selectAll("text").remove();
+  node.selectAll("text").remove();
+  node.append("text")
+    .attr("x", 12)
+    .attr("dy", ".35em")
+    .text(function(d) { return d.name; });
+
+  // drag the node
+  //node.call(force.drag);
+
+  //node.remove();
+
+
+  var legend = svg.selectAll(".legend")
+      .data(color.domain().slice(0,60))
+    .enter().append("g")
+      .attr("class", "legend")
+      .attr("y", 10)
+      .attr("transform", function(d, i) { return "translate(0," + i * 20 + ")"; });
+
+  legend.append("rect")
+      .attr("x", width - 20)
+      .attr("width", 18)
+      .attr("height", 18)
+      .on("click", function(d){
+        d3.select(this)
+        .classed("active", !d3.select(this).classed("active"))
+        .classed("inactive", !d3.select(this).classed("inactive") );
+        if (d3.select(this).classed("active")) {
+          filter.push(d);
+        }
+        else {
+          var index = filter.indexOf(d);
+          filter.splice(index, 1);
+        }
+        update(filter);
+      })
+      .classed("inactive", true);
+      //.style("stroke", "black")
+
+  legend.append("rect")
+      .attr("x", width - 45)
+      .attr("width", 18)
+      .attr("height", 18)
+      .on("click", function(d){update(d)})
+      //.style("stroke", "white")
+      .style("fill", color);
+
+  legend.append("text")
+      .attr("x", width - 58)
+      .attr("y", 9)
+      .attr("dy", ".35em")
+      .style("text-anchor", "end")
+      .text(function(d) { return d; });
+
+
+
+  force.on("tick", function(e) {
+    link.attr("x1", function(d) { return d.source.x; })
+        .attr("y1", function(d) { return d.source.y; })
+        .attr("x2", function(d) { return d.target.x; })
+        .attr("y2", function(d) { return d.target.y; });
+
+    node.attr("cx", function(d) { return d.x; })
+        .attr("cy", function(d) { return d.y; });
+
+    //console.log(e.alpha);
+    if (e.alpha<0.08)
+        force.stop();
+  });
+}
+
+
+</script>
