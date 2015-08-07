@@ -88,11 +88,11 @@ function filterDemLinks(links, filter) {
 }
 */
 
-function filterFromList(links, filterlist) {
- var filtered = links.filter(function (link) {
+function filterFromList(nodes, filterlist) {
+ var filtered = nodes.filter(function (node) {
  var isin = false;
   for (var i = filterlist.length - 1; i >= 0; i--) {
-    if (contains(filterlist[i], link.subjects)) {
+    if (filterlist[i] === node.group) {
       isin = true;
     }
   };
@@ -117,11 +117,10 @@ function update(filter) {
 
   var filterNodes = graph.nodes;
   var filterLinks = graph.links;
-  if (filter.length > 0) { 
+  if (filter.length > 0) {
     //filterNodes = filterDemNodes(graph.nodes, filter);
     filterNodes = filterFromList(graph.nodes, filter);
     //filterNodes = getNodesFromLinks(filterLinks, graph.nodes);
-    
     console.log("Subject: " + filter);
     console.log("First: " + filterNodes[0].name);
     //console.log("Links: " + filterLinks.length);
