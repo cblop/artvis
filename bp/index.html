@@ -118,9 +118,10 @@ function update(filter) {
   var filterNodes = graph.nodes;
   var filterLinks = graph.links;
   if (filter.length > 0) { 
-    //filterNodes = filterDemNodes(graph.nodes, filter);
+    filterNodes = filterDemNodes(graph.nodes, filter);
     filterLinks = filterFromList(graph.links, filter);
-    filterNodes = getNodesFromLinks(filterLinks, graph.nodes);
+    //filterNodes = getNodesFromLinks(filterLinks, graph.nodes);
+    
     console.log("Subject: " + filter);
     console.log("First: " + filterNodes[0].name);
     console.log("Links: " + filterLinks.length);
