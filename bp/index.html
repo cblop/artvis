@@ -101,6 +101,19 @@ function filterFromList(nodes, filterlist) {
  return filtered;
 }
 
+function filterFromList2(nodes, filterlist) {
+ var filtered = nodes.filter(function (node) {
+ var isin = false;
+  for (var i = filterlist.length - 1; i >= 0; i--) {
+      if (contains(filterlist [i], node.subject)) {
+      isin = true;
+    }
+  };
+  return isin;
+ }) 
+ return filtered;
+}
+
 function getNodesFromLinks(links, nodes) {
  var sources =  links.map(function (x) {return x.source});
  var targets =  links.map(function (x) {return x.target});
@@ -120,6 +133,8 @@ function update(filter) {
   if (filter.length > 0) {
     //filterNodes = filterDemNodes(graph.nodes, filter);
     filterNodes = filterFromList(graph.nodes, filter);
+    filterLinks = filterFromList2(graph.links, filter);
+    
     //filterNodes = getNodesFromLinks(filterLinks, graph.nodes);
     console.log("Subject: " + filter);
     console.log("First: " + filterNodes[0].name);
